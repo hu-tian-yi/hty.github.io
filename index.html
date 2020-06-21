@@ -87,9 +87,12 @@
     <div class="article-entry" itemprop="articleBody">
       
         <p>title: 预训练语言模型<br>date: 2020-06-08 00:00:00<br>tags:</p>
-<pre><code>- 学习
-    - 人工智障
-</code></pre><h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>文本表示是指把我们的语言以数学的描述，便于计算机程序自动处理，比如把单词用向量来表示的词向量，虽然NLP任务多种多样，但是在文本的表示上都是相通的，因此这个领域非常适合进行预训练，预训练文本编码一直是众多NLP任务的基础，预训练可以缓解训练样本不足,加快训练速度，获得好的参数初始化。过去有很多预训练的文本分布式表示，如Word2Vec，Glove等，把文本表示成低维、稠密空间的向量。<br>这些词向量的表示常常面临相同的问题：这种静态的词向量是固定的，无法表示一个单词复杂的语义，比如用户搜索apple可能指的是食物苹果或者科技公司，为了解决这种问题，人们开始探索动态的表示方法</p>
+<ul>
+<li>学习</li>
+<li>人工智障</li>
+<li>NLP</li>
+</ul>
+<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>文本表示是指把我们的语言以数学的描述，便于计算机程序自动处理，比如把单词用向量来表示的词向量，虽然NLP任务多种多样，但是在文本的表示上都是相通的，因此这个领域非常适合进行预训练，预训练文本编码一直是众多NLP任务的基础，预训练可以缓解训练样本不足,加快训练速度，获得好的参数初始化。过去有很多预训练的文本分布式表示，如Word2Vec，Glove等，把文本表示成低维、稠密空间的向量。<br>这些词向量的表示常常面临相同的问题：这种静态的词向量是固定的，无法表示一个单词复杂的语义，比如用户搜索apple可能指的是食物苹果或者科技公司，为了解决这种问题，人们开始探索动态的表示方法</p>
 <h1 id="方法的演进"><a href="#方法的演进" class="headerlink" title="方法的演进"></a>方法的演进</h1><h2 id="Encoder-Decoder"><a href="#Encoder-Decoder" class="headerlink" title="Encoder-Decoder"></a>Encoder-Decoder</h2><p>Encoder-Decoder这种编码器-解码器结构，编码器常常采用RNN/LSTM/GRU这样的结构，被广泛应用在各种seq2seq问题中，比如机器翻译。很容易看出，这种结构处理可变长的输入非常容易，而且语义向量C，就是输入的动态语义表示。<br><img src="/2020/06/08/Pre-train/1_1.jpg" alt="Encoder-Decoder"><br>但是这种结构也存在明显的问题:<br>1.首先是一个长的序列，在编码的过程中，前面的信息很容易在传递的过程中逐渐丢失，相比于单向的RNN，LSTM，单向变为双向可以缓解这个问题，但是仍然存在这个问题<br>2.模型并行化的问题，这个模型看起来是明显的串行结构，对于训练大规模网络是相当不利的，关于模型并行化的具体分析，我们之后再进行讨论<sup>1</sup></p>
 <h2 id="Attention"><a href="#Attention" class="headerlink" title="Attention"></a>Attention</h2><p>Attention的本质是和名字十分匹配的，即从“关注整体”发展到“关注重点”，在模型学到的庞大信息中，必然有一部分对当前的状态很有用的，如果可以找到什么信息是重要的，就算信息很多，也可以不丢失关键的信息。<br>那么怎么表示什么是重点呢？思路也很简单，就算“加权平均”，只需要算出一个权重就好了<br>Attention计算这种“加权平均”需要包含三个要素</p>
 <ul>
@@ -135,43 +138,44 @@
 <p><img src="/2020/06/08/Pre-train/1_5.jpg" alt="Transformer" style="zoom:100%;"></p>
 <ol>
 <li><p>Inputs 是padding过后的输入数据，大小[batch size,max seq length]</p>
-<blockquote>
-<p>padding是解决一个batch句子长度不一致的情况，会以batch的最长的句子作为batch的维度值，其余较短句子补充<pad> token，以使该batch的所有样本维度相同，而随后参数更新的时候，梯度永远为0</pad></p>
-</blockquote>
+<ul>
+<li>padding是解决一个batch句子长度不一致的情况，会以batch的最长的句子作为batch的维度值，其余较短句子补充<pad> token，以使该batch的所有样本维度相同，而随后参数更新的时候，梯度永远为0</pad></li>
+</ul>
 </li>
 </ol>
 <ol>
 <li><p>通过查embedding表，映射到[batch size,max seq length，embedding size]，最后乘以embedding size的开方</p>
-<blockquote>
-<p>Inputs 在英文中通常采用的是Subword级别的表示，中文的话基于字做embedding就可以了</p>
-<p>subword级别的embedding常见的包括BPE（Byte Pair Encoding),WordPiece等</p>
-<p>具体了解可以参考：<a href="https://zhuanlan.zhihu.com/p/86965595" target="_blank" rel="noopener">https://zhuanlan.zhihu.com/p/86965595</a></p>
-</blockquote>
+<ul>
+<li>Inputs 在英文中通常采用的是Subword级别的表示，中文的话基于字做embedding就可以了<br>subword级别的embedding常见的包括BPE（Byte Pair Encoding),WordPiece等<br>具体了解可以参考：<a href="https://zhuanlan.zhihu.com/p/86965595" target="_blank" rel="noopener">https://zhuanlan.zhihu.com/p/86965595</a></li>
+</ul>
 </li>
 </ol>
-<blockquote>
-<p>为什么要乘上embedding size的开方？</p>
-<p>有一种说法是从便于优化的角度，我不是特别认同。</p>
-<p>一种说法是因为和17步参数共享，需要保持一致的scale，我觉得这种说法比较正确</p>
-<p>还有另一种说法是增大的embedding 的scale 来保证和下一步的positional encoding相加之后，应该保证embedding占主导地位，不会丢失信息，我觉得这个也是比较正确的一种说法</p>
-</blockquote>
+<p>   为什么要乘上embedding size的开方？</p>
+<ul>
+<li>有一种说法是从便于优化的角度，我不是特别认同。</li>
+<li>一种说法是因为和17步参数共享，需要保持一致的scale，我觉得这种说法比较正确</li>
+<li>还有另一种说法是增大的embedding 的scale 来保证和下一步的positional encoding相加之后，应该保证embedding占主导地位，不会丢失信息，我觉得这个也是比较正确的一种说法</li>
+</ul>
 <ol>
 <li><p>加入positional encoding，然后dropout</p>
-<blockquote>
-<p>为什么需要位置编码？</p>
-<p>因为后面的self-attention不像RNN类模型一样，已经破坏了位置信息，而语序常常非常重要，为了避免丢失信息，需要加入位置编码</p>
-</blockquote>
-</li>
+<p>-为什么需要位置编码？</p>
+<pre><code>因为后面的self-attention不像RNN类模型一样，已经破坏了位置信息，而语序常常非常重要，为了避免丢失信息，需要加入位置编码
+</code></pre></li>
 </ol>
 <p>   Transformer具体的编码为：</p>
 <p>   <img src="/2020/06/08/Pre-train/1_6.jpg" alt="positional encoding" style="zoom:50%;"></p>
-<blockquote>
-<p>采用三角函数，是因为scale不会太大，因为要和语义的encoding直接相加，并且计算相对简单</p>
-<p>作者解释用sin和cos是为了能满足让相邻为k的两个位置符合一个线性关系：间隔为k的任意两个位置编码的欧式空间距离是恒等的，只与k有关</p>
-<p>采用10000这样的经验数值，是尽可能保证位置编码不要重复（如果太小），也不要集中在很小的值域里（如果太大）</p>
-<p>关于position encoding，大概有两种，Transformer采用的是固定的encoding，Bert采用的是可以学习的参数</p>
-<p>可以学习的encoding准确上应该比较好，但是需要训练，并且需要限定在一定长度内，因此BERT有最大的长度限制，而Transformer这种三角函数的没有这种限制</p>
-</blockquote>
+<ul>
+<li><p>采用三角函数，是因为scale不会太大，因为要和语义的encoding直接相加，并且计算相对简单</p>
+</li>
+<li><p>作者解释用sin和cos是为了能满足让相邻为k的两个位置符合一个线性关系：间隔为k的任意两个位置编码的欧式空间距离是恒等的，只与k有关</p>
+</li>
+<li><p>采用10000这样的经验数值，是尽可能保证位置编码不要重复（如果太小），也不要集中在很小的值域里（如果太大）</p>
+</li>
+<li><p>关于position encoding，大概有两种，Transformer采用的是固定的encoding，Bert采用的是可以学习的参数</p>
+</li>
+<li><p>可以学习的encoding准确上应该比较好，但是需要训练，并且需要限定在一定长度内，因此BERT有最大的长度限制，而Transformer这种三角函数的没有这种限制</p>
+</li>
+</ul>
 <ol>
 <li><p>multi-head attention</p>
 <p>4.1 把输入的embedding通过线性变换生成Q，K，V，大小是[batch size, max seq length, embedding size]，然后按第2维split成num heads份并按第0维concat，生成新的Q，K，V，大小是[num heads*batch size, max seq length, embedding size/num heads]，完成multi-head的操作。</p>
@@ -179,33 +183,37 @@
 <p>4.3 完成Mask操作，把点积置为非常小，这样在softmax里面就忽略不计了，并进行softmax</p>
 <p>4.4 将softmax的结果和V进行点积，得到attention的结果，大小是[num heads*batch size, max seq length, embedding size/num heads]。</p>
 <p>4.5 按第0维split成num heads份并按最后一维concat，大小是[batch size, max seq length, hidden size]，这是multi-head attention的结果</p>
-<blockquote>
-<p>多头注意力的优势上文已经提过，作者也有实验证明</p>
-</blockquote>
+<ul>
+<li>多头注意力的优势上文已经提过，作者也有实验证明</li>
+</ul>
 </li>
 </ol>
 <ol>
 <li><p>将token embedding和multi-head attention的结果相加，并进行Layer Normalization</p>
-<blockquote>
-<p>相加是类似Resnet的思想，避免网络退化</p>
-</blockquote>
+<ul>
+<li><p>相加是类似Resnet的思想，避免网络退化</p>
+</li>
+<li><p>为什么Layer Normalization</p>
+<p> Layer Normalization和BN是类似的，都是要把输入映射到一定的分布内，这个区间内激活函数敏感，便于优化</p>
+</li>
+<li><p>那为什么不用BN呢？<br>  BN是在一个位置上做分布变化，但NLP常常都是变长的，假设某个序列特别长，在特别长的位置上，可能一个Batch内就只有这一个特别长的样本，BN就失效了</p>
+</li>
+<li><p>而LN是对单个样本的所有维度进行（BN对所有维度的一个样本进行）</p>
+</li>
+<li><p>实验证明LN非常重要，没有甚至不能收敛</p>
+</li>
+</ul>
 </li>
 </ol>
-<blockquote>
-<p>为什么Layer Normalization</p>
-<p>Layer Normalization和BN是类似的，都是要把输入映射到一定的分布内，这个区间内激活函数敏感，便于优化</p>
-<p>那为什么不用BN呢？</p>
-<p>BN是在一个位置上做分布变化，但NLP常常都是变长的，假设某个序列特别长，在特别长的位置上，可能一个Batch内就只有这一个特别长的样本，BN就失效了</p>
-<p>而LN是对单个样本的所有维度进行（BN对所有维度的一个样本进行）</p>
-<p>实验证明LN非常重要，没有甚至不能收敛</p>
-</blockquote>
 <ol>
 <li><p>经过2层Dense，其中第1层的activation=None，第2层activation=Relu</p>
 <p><img src="/2020/06/08/Pre-train/1_7.jpg" alt="positional encoding" style="zoom:100%;"></p>
-<blockquote>
-<p>FFN可以提高模型非线性变换的能力，参考CNN，卷积和FC交替</p>
-<p>其中矩阵W1[embedding size，ffn size]，矩阵2[ffn size，embedding size]。ffn size通常为embedding size的几倍，相当于将每个位置的Attention结果映射到一个更大维度的特征空间，然后使用ReLU引入非线性进行筛选，最后恢复回原始维度。</p>
-</blockquote>
+<ul>
+<li><p>FFN可以提高模型非线性变换的能力，参考CNN，卷积和FC交替</p>
+</li>
+<li><p>其中矩阵W1[embedding size，ffn size]，矩阵2[ffn size，embedding size]。ffn size通常为embedding size的几倍，相当于将每个位置的Attention结果映射到一个更大维度的特征空间，然后使用ReLU引入非线性进行筛选，最后恢复回原始维度。</p>
+</li>
+</ul>
 </li>
 <li><p>和5一样</p>
 </li>
@@ -220,10 +228,10 @@
 <li><p>和5一样</p>
 </li>
 <li><p>和4类似，但Key 和 Value是解码器的输出</p>
-<blockquote>
-<p>​    具体来说，此时编码器和解码器的输出都是[batch size, max seq length, embedding size]</p>
-<p>然后Q是Decoder 多头注意力输出通过线性变换得到的，K&amp;V是编码器输出通过线性变换得到的</p>
-</blockquote>
+<ul>
+<li>具体来说，此时编码器和解码器的输出都是[batch size, max seq length, embedding size]</li>
+<li>然后Q是Decoder 多头注意力输出通过线性变换得到的，K&amp;V是编码器输出通过线性变换得到的</li>
+</ul>
 </li>
 <li><p>和5一样</p>
 </li>
@@ -239,16 +247,16 @@
 </li>
 </ol>
 <p>Transformer的正则化</p>
-<p>​    1.Dropout，有两处，分别是encoding相加之后和Add &amp; Norm阶段</p>
-<p>​    2.采用了标签平滑（LSR），作者认为虽然 ppl（困惑度） 受到影响，但是 bleu 会提升</p>
+<p>​     1.Dropout，有两处，分别是encoding相加之后和Add &amp; Norm阶段</p>
+<p>​     2.采用了标签平滑（LSR），作者认为虽然 ppl（困惑度） 受到影响，但是 bleu 会提升</p>
 <p>​        LSR 考虑的是 softmax 层，具体的做法是让模型的输出不要过于贴合单点分布，选择在 gound-truth 中加入噪声。把最大的削弱分给其他的</p>
 <p>Transformer如何做的并行化</p>
-<p>​        encoder是并行的，训练的时候decoder也是并行的，但是inference的时候不是（没有标签了）</p>
+<p>​     encoder是并行的，训练的时候decoder也是并行的，但是inference的时候不是（没有标签了）</p>
 <h2 id="Elmo-GPT-Bert"><a href="#Elmo-GPT-Bert" class="headerlink" title="Elmo/GPT/Bert"></a>Elmo/GPT/Bert</h2><h2 id="Bert变种"><a href="#Bert变种" class="headerlink" title="Bert变种"></a>Bert变种</h2>
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2020/06/08/Pre-train/" data-id="ckbphtjoj0000m4tr0uy7al2a" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2020/06/08/Pre-train/" data-id="ckbpia4gf0000octraqcbass4" class="article-share-link">Share</a>
       
       
     </footer>
@@ -285,7 +293,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/1900/01/01/hello-world/" data-id="ckbphtjp60001m4tr9q4612gz" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/1900/01/01/hello-world/" data-id="ckbpia4gk0001octrarq4fsg1" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E7%A2%8E%E7%A2%8E%E5%BF%B5/" rel="tag">碎碎念</a></li></ul>
