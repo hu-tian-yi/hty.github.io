@@ -22,7 +22,7 @@
 <meta property="og:image" content="http://yoursite.com/2020/06/08/Pre-train/1_6.jpg">
 <meta property="og:image" content="http://yoursite.com/2020/06/08/Pre-train/1_7.jpg">
 <meta property="article:published_time" content="2020-06-07T17:18:10.688Z">
-<meta property="article:modified_time" content="2020-06-21T20:10:35.409Z">
+<meta property="article:modified_time" content="2020-06-21T20:14:15.938Z">
 <meta property="article:author" content="Tianyi">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="http://yoursite.com/2020/06/08/Pre-train/1_1.jpg">
@@ -146,32 +146,22 @@
 <h2 id="Transformer"><a href="#Transformer" class="headerlink" title="Transformer"></a>Transformer</h2><p>有了前面这些铺垫，很容易发现，代替传统word2vec等词级别预训练，是一种按着encoder-decoder结构，抛弃效率低的RNN，而改用注意力机制，并加以改进的模型</p>
 <p>下面是Transformer模型，我们将按层逐步介绍</p>
 <p><img src="/2020/06/08/Pre-train/1_5.jpg" alt="Transformer" style="zoom:100%;"></p>
-<ol>
-<li><p>Inputs 是padding过后的输入数据，大小[batch size,max seq length]</p>
+<p>1.Inputs 是padding过后的输入数据，大小[batch size,max seq length]</p>
 <ul>
 <li>padding是解决一个batch句子长度不一致的情况，会以batch的最长的句子作为batch的维度值，其余较短句子补充<pad> token，以使该batch的所有样本维度相同，而随后参数更新的时候，梯度永远为0</pad></li>
 </ul>
-</li>
-</ol>
-<ol>
-<li><p>通过查embedding表，映射到[batch size,max seq length，embedding size]，最后乘以embedding size的开方</p>
+<p>2.通过查embedding表，映射到[batch size,max seq length，embedding size]，最后乘以embedding size的开方</p>
 <ul>
 <li>Inputs 在英文中通常采用的是Subword级别的表示，中文的话基于字做embedding就可以了<br>subword级别的embedding常见的包括BPE（Byte Pair Encoding),WordPiece等<br>具体了解可以参考：<a href="https://zhuanlan.zhihu.com/p/86965595" target="_blank" rel="noopener">https://zhuanlan.zhihu.com/p/86965595</a></li>
 </ul>
-</li>
-</ol>
 <p>   为什么要乘上embedding size的开方？</p>
 <ul>
 <li>有一种说法是从便于优化的角度，我不是特别认同。</li>
 <li>一种说法是因为和17步参数共享，需要保持一致的scale，我觉得这种说法比较正确</li>
 <li>还有另一种说法是增大的embedding 的scale 来保证和下一步的positional encoding相加之后，应该保证embedding占主导地位，不会丢失信息，我觉得这个也是比较正确的一种说法</li>
 </ul>
-<ol>
-<li><p>加入positional encoding，然后dropout</p>
-<p>-为什么需要位置编码？</p>
-<pre><code>因为后面的self-attention不像RNN类模型一样，已经破坏了位置信息，而语序常常非常重要，为了避免丢失信息，需要加入位置编码
-</code></pre></li>
-</ol>
+<p>3.加入positional encoding，然后dropout</p>
+<p>   -为什么需要位置编码？<br>       因为后面的self-attention不像RNN类模型一样，已经破坏了位置信息，而语序常常非常重要，为了避免丢失信息，需要加入位置编码</p>
 <p>   Transformer具体的编码为：</p>
 <p>   <img src="/2020/06/08/Pre-train/1_6.jpg" alt="positional encoding" style="zoom:50%;"></p>
 <ul>
@@ -186,20 +176,16 @@
 <li><p>可以学习的encoding准确上应该比较好，但是需要训练，并且需要限定在一定长度内，因此BERT有最大的长度限制，而Transformer这种三角函数的没有这种限制</p>
 </li>
 </ul>
-<ol>
-<li><p>multi-head attention</p>
-<p>4.1 把输入的embedding通过线性变换生成Q，K，V，大小是[batch size, max seq length, embedding size]，然后按第2维split成num heads份并按第0维concat，生成新的Q，K，V，大小是[num heads*batch size, max seq length, embedding size/num heads]，完成multi-head的操作。</p>
-<p>4.2 将K的第1维和第2维进行转置，然后Q和转置后的K的进行点积，并除embedding size的开方，完成scale（为什么scale前面Attention说过了）</p>
-<p>4.3 完成Mask操作，把点积置为非常小，这样在softmax里面就忽略不计了，并进行softmax</p>
-<p>4.4 将softmax的结果和V进行点积，得到attention的结果，大小是[num heads*batch size, max seq length, embedding size/num heads]。</p>
-<p>4.5 按第0维split成num heads份并按最后一维concat，大小是[batch size, max seq length, hidden size]，这是multi-head attention的结果</p>
+<p>4.multi-head attention</p>
+<p>   4.1 把输入的embedding通过线性变换生成Q，K，V，大小是[batch size, max seq length, embedding size]，然后按第2维split成num heads份并按第0维concat，生成新的Q，K，V，大小是[num heads*batch size, max seq length, embedding size/num heads]，完成multi-head的操作。</p>
+<p>   4.2 将K的第1维和第2维进行转置，然后Q和转置后的K的进行点积，并除embedding size的开方，完成scale（为什么scale前面Attention说过了）</p>
+<p>   4.3 完成Mask操作，把点积置为非常小，这样在softmax里面就忽略不计了，并进行softmax</p>
+<p>   4.4 将softmax的结果和V进行点积，得到attention的结果，大小是[num heads*batch size, max seq length, embedding size/num heads]。</p>
+<p>   4.5 按第0维split成num heads份并按最后一维concat，大小是[batch size, max seq length, hidden size]，这是multi-head attention的结果</p>
 <ul>
 <li>多头注意力的优势上文已经提过，作者也有实验证明</li>
 </ul>
-</li>
-</ol>
-<ol>
-<li><p>将token embedding和multi-head attention的结果相加，并进行Layer Normalization</p>
+<p>5.将token embedding和multi-head attention的结果相加，并进行Layer Normalization</p>
 <ul>
 <li><p>相加是类似Resnet的思想，避免网络退化</p>
 </li>
@@ -213,49 +199,31 @@
 <li><p>实验证明LN非常重要，没有甚至不能收敛</p>
 </li>
 </ul>
-</li>
-</ol>
-<ol>
-<li><p>经过2层Dense，其中第1层的activation=None，第2层activation=Relu</p>
-<p><img src="/2020/06/08/Pre-train/1_7.jpg" alt="positional encoding" style="zoom:100%;"></p>
+<p>6.经过2层Dense，其中第1层的activation=None，第2层activation=Relu</p>
+<p>   <img src="/2020/06/08/Pre-train/1_7.jpg" alt="positional encoding" style="zoom:100%;"></p>
 <ul>
 <li><p>FFN可以提高模型非线性变换的能力，参考CNN，卷积和FC交替</p>
 </li>
 <li><p>其中矩阵W1[embedding size，ffn size]，矩阵2[ffn size，embedding size]。ffn size通常为embedding size的几倍，相当于将每个位置的Attention结果映射到一个更大维度的特征空间，然后使用ReLU引入非线性进行筛选，最后恢复回原始维度。</p>
 </li>
 </ul>
-</li>
-<li><p>和5一样</p>
-</li>
-<li><p>经过padding的输出，序列前需要开始标记表示序列生成的开始，而Inputs不需要。</p>
-</li>
-<li><p>和2一样</p>
-</li>
-<li><p>和3一样</p>
-</li>
-<li><p>和4类似，但把当前token和后面的token乘积也MASK置为无穷小，因为真正预测的时候不知道后面标签长什么样子</p>
-</li>
-<li><p>和5一样</p>
-</li>
-<li><p>和4类似，但Key 和 Value是解码器的输出</p>
+<p>7.和5一样</p>
+<p>8.经过padding的输出，序列前需要开始标记表示序列生成的开始，而Inputs不需要。</p>
+<p>9.和2一样</p>
+<p>10.和3一样</p>
+<p>11.和4类似，但把当前token和后面的token乘积也MASK置为无穷小，因为真正预测的时候不知道后面标签长什么样子</p>
+<p>12.和5一样</p>
+<p>13.和4类似，但Key 和 Value是解码器的输出</p>
 <ul>
 <li>具体来说，此时编码器和解码器的输出都是[batch size, max seq length, embedding size]</li>
 <li>然后Q是Decoder 多头注意力输出通过线性变换得到的，K&amp;V是编码器输出通过线性变换得到的</li>
 </ul>
-</li>
-<li><p>和5一样</p>
-</li>
-<li><p>和6一样</p>
-</li>
-<li><p>和7一样，结果大小[batch size, max seq length, embedding size]</p>
-</li>
-<li><p>将上一步的结果的后2维和embedding matrix的转置进行点积，生成的结果的大小是[batch size, max seq length, vocab size]</p>
-</li>
-<li><p>softmax，生成的结果就表示当前时刻预测的下一个token在vocab上的概率分布。</p>
-</li>
-<li><p>计算softmax概率分布和真实的下一个token的one-hot形式的cross entropy，然后sum非padding的token的交叉熵当作loss，利用adam进行训练。</p>
-</li>
-</ol>
+<p>14.和5一样</p>
+<p>15.和6一样</p>
+<p>16.和7一样，结果大小[batch size, max seq length, embedding size]</p>
+<p>17.将上一步的结果的后2维和embedding matrix的转置进行点积，生成的结果的大小是[batch size, max seq length, vocab size]</p>
+<p>18.softmax，生成的结果就表示当前时刻预测的下一个token在vocab上的概率分布。</p>
+<p>19.计算softmax概率分布和真实的下一个token的one-hot形式的cross entropy，然后sum非padding的token的交叉熵当作loss，利用adam进行训练。</p>
 <p>Transformer的正则化</p>
 <p>​     1.Dropout，有两处，分别是encoding相加之后和Add &amp; Norm阶段</p>
 <p>​     2.采用了标签平滑（LSR），作者认为虽然 ppl（困惑度） 受到影响，但是 bleu 会提升</p>
@@ -266,7 +234,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2020/06/08/Pre-train/" data-id="ckbpicly60000sctrfhu72q56" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2020/06/08/Pre-train/" data-id="ckbpietr1000174tre2nk9b61" class="article-share-link">Share</a>
       
       
     </footer>
